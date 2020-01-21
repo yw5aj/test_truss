@@ -27,12 +27,11 @@ Truss2Material::validParams()
                                "Optional parameter that allows the user to define "
                                "multiple mechanics material systems on the same "
                                "block, i.e. for multiple phases");
-  params.addRequiredParam<std::vector<VariableName>>(
+  params.addRequiredCoupledVar(
       "displacements",
       "The displacements appropriate for the simulation geometry and coordinate system");
   params.addRequiredCoupledVar(
       "rotations", "The rotations appropriate for the simulation geometry and coordinate system");      
-  params.addCoupledVar("youngs_modulus", "Variable containing Young's modulus");
   params.addRequiredParam<std::vector<Real>>(
       "stiffness_matrix", 
       "Components of upper triangle part of the stiffness matrix in column major order");

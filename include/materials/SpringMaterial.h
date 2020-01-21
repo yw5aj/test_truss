@@ -1,28 +1,19 @@
-//* This file is part of the MOOSE framework
-//* https://www.mooseframework.org
-//*
-//* All rights reserved, see COPYRIGHT for full restrictions
-//* https://github.com/idaholab/moose/blob/master/COPYRIGHT
-//*
-//* Licensed under LGPL 2.1, please see LICENSE for details
-//* https://www.gnu.org/licenses/lgpl-2.1.html
-
 #pragma once
 
 #include "Material.h"
 
 // Forward Declarations
-class Truss2Material;
+class SpringMaterial;
 
 template <>
-InputParameters validParams<Truss2Material>();
+InputParameters validParams<SpringMaterial>();
 
-class Truss2Material : public Material
+class SpringMaterial : public Material
 {
 public:
   static InputParameters validParams();
 
-  Truss2Material(const InputParameters & parameters);
+  SpringMaterial(const InputParameters & parameters);
 
 protected:
   virtual void initQpStatefulProperties();
@@ -35,7 +26,7 @@ protected:
 
   const std::string _base_name;
 
-  unsigned int _ndisp;
+  unsigned int _ndisp, _nrot;
   const VariableValue & _youngs_modulus;
 
   MaterialProperty<Real> & _total_stretch;
