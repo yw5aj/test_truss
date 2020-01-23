@@ -27,7 +27,8 @@ protected:
   const std::string _base_name;
 
   unsigned int _ndisp, _nrot;
-  const VariableValue & _youngs_modulus;
+  const std::vector<VariableValue> & stiffness_coeffs;
+  
 
   MaterialProperty<Real> & _total_stretch;
   MaterialProperty<Real> & _elastic_stretch;

@@ -33,8 +33,8 @@ Truss2Material::validParams()
   params.addRequiredCoupledVar(
       "rotations", "The rotations appropriate for the simulation geometry and coordinate system");      
   params.addRequiredParam<std::vector<Real>>(
-      "stiffness_matrix", 
-      "Components of upper triangle part of the stiffness matrix in column major order");
+      "stiffness_coeffs", 
+      "Components of upper triangular part of the stiffness matrix in column major order");
 
   return params;
 }
