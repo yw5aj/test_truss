@@ -23,10 +23,6 @@ InputParameters
 SpringMaterial::validParams()
 {
   InputParameters params = Material::validParams();
-  params.addParam<std::string>("base_name",
-                               "Optional parameter that allows the user to define "
-                               "multiple mechanics material systems on the same "
-                               "block, i.e. for multiple phases");
   params.addCoupledVar(
       "displacements",
       "The displacements appropriate for the simulation geometry and coordinate system");
@@ -41,11 +37,9 @@ SpringMaterial::validParams()
 
 SpringMaterial::SpringMaterial(const InputParameters & parameters)
   : Material(parameters),
-    _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
-    _total_stretch(declareProperty<Real>(_base_name + "total_stretch")),
-    _elastic_stretch(declareProperty<Real>(_base_name + "elastic_stretch")),
-    _axial_stress(declareProperty<Real>(_base_name + "axial_stress")),
-    _e_over_l(declareProperty<Real>(_base_name + "e_over_l"))
+    _delta_disp(declareProperty<Real>("delta_disp")),
+    _delta_rot(declareProperty<Real>("delta_rot")),
+    _delta_dof(declareProperty<Real>("delta_dof"))
 {
   const std::vector<VariableName> 
     & disp_vnames(getParam<std::vector<VariableName>>("displacements")),
@@ -61,19 +55,24 @@ SpringMaterial::SpringMaterial(const InputParameters & parameters)
     _rot_var.push_back(&_fe_problem.getStandardVariable(_tid, rot_vnames[i]));
 
   // Fill the stiffness matrix
-  const std::vector<VariableValue> & stiffness_coeffs = getParam<std::vector<VariableValue>>("stiffness_coeffs");
-  ColumnMajorMatrix _stiffness_matrix(_ndof, _ndof);
-
-
+  const std::vector<Real> & stiffness_coeffs = getParam<std::vector<Real>>("stiffness_coeffs");
+  _stiffness_matrix.resize(_ndof, _ndof);
+  unsigned int k = 0;  // Counter in the column-major ABAQUS-like vector
+  for (unsigned int j = 0; j < _ndof; ++j)
+    for (unsigned int i = 0; i <= j; ++i)
+    {
+      _stiffness_matrix(i, j) = stiffness_coeffs[k];
+      ++k;
+    }
 
 }
 
 void
 SpringMaterial::initQpStatefulProperties()
 {
-  _axial_stress[_qp] = 0.0;
-  _total_stretch[_qp] = 0.0;
-  _elastic_stretch[_qp] = 0.0;
+  _delta_disp[_qp].resize(_ndisp);
+  _delta_rot[_qp].resize(_nrot);
+  _delta_dof[_qp].resize(_ndof);
 }
 
 void

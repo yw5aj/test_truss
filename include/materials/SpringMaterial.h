@@ -24,16 +24,11 @@ protected:
 
   std::vector<MooseVariable *> _disp_var, _rot_var;
 
-  const std::string _base_name;
-  ColumnMajorMatrix _stiffness_matrix;
+  DenseMatrix<Real> _stiffness_matrix;
 
   unsigned int _ndisp, _nrot, _ndof;
 
-  MaterialProperty<Real> & _total_stretch;
-  MaterialProperty<Real> & _elastic_stretch;
-  MaterialProperty<Real> & _axial_stress;
-  MaterialProperty<Real> & _e_over_l;
-
-  Real _origin_length;
-  Real _current_length;
+  MaterialProperty<DenseVector<Real>> & _delta_disp;
+  MaterialProperty<DenseVector<Real>> & _delta_rot;
+  MaterialProperty<DenseVector<Real>> & _delta_dof;
 };
