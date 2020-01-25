@@ -86,32 +86,37 @@ SpringMaterial::computeProperties()
   for (unsigned int i = 0; i < 2; ++i)
     node.push_back(_current_elem->node_ptr(i));
 
-  // calculate original length of a truss element
-  RealGradient dxyz;
-  for (unsigned int i = 0; i < _ndisp; ++i)
-    dxyz(i) = (*node[1])(i) - (*node[0])(i);
-  _origin_length = dxyz.norm();
-
   // fetch the solution for the two end nodes
   NonlinearSystemBase & nonlinear_sys = _fe_problem.getNonlinearSystemBase();
   const NumericVector<Number> & sol = *nonlinear_sys.currentSolution();
 
-  std::vector<Real> disp0, disp1;
+  DenseVector<Real> disp0, disp1, rot0, rot1;
   for (unsigned int i = 0; i < _ndisp; ++i)
   {
-    disp0.push_back(sol(node[0]->dof_number(nonlinear_sys.number(), _disp_var[i]->number(), 0)));
-    disp1.push_back(sol(node[1]->dof_number(nonlinear_sys.number(), _disp_var[i]->number(), 0)));
+    disp0(i) = (sol(node[0]->dof_number(nonlinear_sys.number(), _disp_var[i]->number(), 0)));
+    disp1(i) = (sol(node[1]->dof_number(nonlinear_sys.number(), _disp_var[i]->number(), 0)));
+  }
+  for (unsigned int i = 0; i < _nrot; ++i)
+  {
+    rot0(i) = (sol(node[0]->dof_number(nonlinear_sys.number(), _rot_var[i]->number(), 0)));
+    rot1(i) = (sol(node[1]->dof_number(nonlinear_sys.number(), _rot_var[i]->number(), 0)));
   }
 
-  // calculate current length of a truss element
+  // calculate delta of the dof
+  _delta_disp[_qp] = disp1;
+  _delta_disp[_qp] -= disp0;
+  _delta_rot[_qp] = rot1;
+  _delta_rot[_qp] -= rot0;
+
   for (unsigned int i = 0; i < _ndisp; ++i)
-    dxyz(i) += disp1[i] - disp0[i];
-  _current_length = dxyz.norm();
+    _delta_dof[_qp](i) = _delta_disp[_qp](i);
+
+  for (unsigned int i = _ndisp; i < _ndof; ++i)
+    _delta_dof[_qp](i) = _delta_rot[_qp](i - _ndisp);
+
 
   for (_qp = 0; _qp < _qrule->n_points(); ++_qp)
   {
-    _e_over_l[_qp] = _youngs_modulus[_qp] / _origin_length;
-
     computeQpStrain();
     computeQpStress();
   }
