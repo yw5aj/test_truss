@@ -22,13 +22,12 @@ protected:
   virtual void computeQpStrain() = 0;
   virtual void computeQpStress() = 0;
 
-  std::vector<MooseVariable *> _disp_var;
+  std::vector<MooseVariable *> _disp_var, _rot_var;
 
   const std::string _base_name;
+  ColumnMajorMatrix _stiffness_matrix;
 
-  unsigned int _ndisp, _nrot;
-  const std::vector<VariableValue> & stiffness_coeffs;
-  
+  unsigned int _ndisp, _nrot, _ndof;
 
   MaterialProperty<Real> & _total_stretch;
   MaterialProperty<Real> & _elastic_stretch;

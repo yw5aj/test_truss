@@ -7,7 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "Truss2Material.h"
+#include "SpringMaterial.h"
 
 // MOOSE includes
 #include "Material.h"
@@ -17,20 +17,20 @@
 
 #include "libmesh/quadrature.h"
 
-defineLegacyParams(Truss2Material);
+defineLegacyParams(SpringMaterial);
 
 InputParameters
-Truss2Material::validParams()
+SpringMaterial::validParams()
 {
   InputParameters params = Material::validParams();
   params.addParam<std::string>("base_name",
                                "Optional parameter that allows the user to define "
                                "multiple mechanics material systems on the same "
                                "block, i.e. for multiple phases");
-  params.addRequiredCoupledVar(
+  params.addCoupledVar(
       "displacements",
       "The displacements appropriate for the simulation geometry and coordinate system");
-  params.addRequiredCoupledVar(
+  params.addCoupledVar(
       "rotations", "The rotations appropriate for the simulation geometry and coordinate system");      
   params.addRequiredParam<std::vector<Real>>(
       "stiffness_coeffs", 
@@ -39,25 +39,37 @@ Truss2Material::validParams()
   return params;
 }
 
-Truss2Material::Truss2Material(const InputParameters & parameters)
+SpringMaterial::SpringMaterial(const InputParameters & parameters)
   : Material(parameters),
     _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
-    _youngs_modulus(coupledValue("youngs_modulus")),
     _total_stretch(declareProperty<Real>(_base_name + "total_stretch")),
     _elastic_stretch(declareProperty<Real>(_base_name + "elastic_stretch")),
     _axial_stress(declareProperty<Real>(_base_name + "axial_stress")),
     _e_over_l(declareProperty<Real>(_base_name + "e_over_l"))
 {
-  const std::vector<VariableName> & nl_vnames(getParam<std::vector<VariableName>>("displacements"));
-  _ndisp = nl_vnames.size();
+  const std::vector<VariableName> 
+    & disp_vnames(getParam<std::vector<VariableName>>("displacements")),
+    & rot_vnames(getParam<std::vector<VariableName>>("rotations"));
+  _ndisp = disp_vnames.size();
+  _nrot = rot_vnames.size();
+  _ndof = _ndisp + _nrot;
 
-  // fetch nonlinear variables
+  // fetch displacement & rotation variables
   for (unsigned int i = 0; i < _ndisp; ++i)
-    _disp_var.push_back(&_fe_problem.getStandardVariable(_tid, nl_vnames[i]));
+    _disp_var.push_back(&_fe_problem.getStandardVariable(_tid, disp_vnames[i]));
+  for (unsigned int i = 0; i < _nrot; ++i)
+    _rot_var.push_back(&_fe_problem.getStandardVariable(_tid, rot_vnames[i]));
+
+  // Fill the stiffness matrix
+  const std::vector<VariableValue> & stiffness_coeffs = getParam<std::vector<VariableValue>>("stiffness_coeffs");
+  ColumnMajorMatrix _stiffness_matrix(_ndof, _ndof);
+
+
+
 }
 
 void
-Truss2Material::initQpStatefulProperties()
+SpringMaterial::initQpStatefulProperties()
 {
   _axial_stress[_qp] = 0.0;
   _total_stretch[_qp] = 0.0;
@@ -65,7 +77,7 @@ Truss2Material::initQpStatefulProperties()
 }
 
 void
-Truss2Material::computeProperties()
+SpringMaterial::computeProperties()
 {
   // check for consistency of the number of element nodes
   mooseAssert(_current_elem->n_nodes() == 2, "Truss element needs to have exactly two nodes.");
