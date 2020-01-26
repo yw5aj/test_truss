@@ -37,9 +37,9 @@ SpringMaterial::validParams()
 
 SpringMaterial::SpringMaterial(const InputParameters & parameters)
   : Material(parameters),
-    _delta_disp(declareProperty<Real>("delta_disp")),
-    _delta_rot(declareProperty<Real>("delta_rot")),
-    _delta_dof(declareProperty<Real>("delta_dof"))
+    _delta_disp(declareProperty<DenseVector<Real>>("delta_disp")),
+    _delta_rot(declareProperty<DenseVector<Real>>("delta_rot")),
+    _delta_dof(declareProperty<DenseVector<Real>>("delta_dof"))
 {
   const std::vector<VariableName> 
     & disp_vnames(getParam<std::vector<VariableName>>("displacements")),
